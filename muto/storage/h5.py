@@ -237,7 +237,7 @@ class H5(object):
         Insert index variable arrays into the document
         
         Parameters
-        ----------
+        ---------- 
         group: str, opt
             Specify the group in the file where the data are read from
         **indices:
