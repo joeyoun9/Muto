@@ -105,7 +105,6 @@ class H5(object):
             table_description[k]=tables.Float32Col(shape=variables[k],pos=i,
                                                    dflt=-9999.)
             i+=1
-            print table_description
         data_table = self.doc.createTable(group,'data',table_description,
                                     filters=filters.copy(),expectedrows=size_guess)
         'Set file attributes'        
