@@ -30,7 +30,7 @@ class H5(object):
         self.filename = fname
         self.doc = False
 
-    def create(self, close=True, indices=False, group='/', size_guess=2000000 **variables):
+    def create(self, close=True, indices=False, group='/', size_guess=2000000, **variables):
         # create an hdf5 table for use with datasets, ideally of known size...
         # variables specifies what variables will be filled in this archive
         """
