@@ -338,7 +338,7 @@ class H5(object):
         """
         if not self.doc or not self.doc.isopen:
             self.doc = h5openr(self.filename)
-        indices = self.doc.getNode(group).getAttr('indices')
+        indices = self.doc.getNodeAttr(group,'indices')
         if variable in indices:
             out = self.doc.getNode(group,name=variable)[:]
         else:
