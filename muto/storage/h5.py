@@ -111,7 +111,7 @@ class H5(object):
         self.doc.setNodeAttr('/','creator', 'Muto v'+muto.version())
         self.doc.setNodeAttr('/','version', '1.1')
         'set any group attributes. - a list of available attributes'
-        self.doc.getNode(group).setAttr('indices',indices.keys())
+        self.doc.setNodeAttr(group,'indices',indices.keys())
         
         if close:
             self.doc.close()
