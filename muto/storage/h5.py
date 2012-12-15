@@ -10,6 +10,7 @@ instead of v arrays.
 import tables 
 import fcntl
 import muto
+import numpy as np
 
 class H5(object):
     '''
