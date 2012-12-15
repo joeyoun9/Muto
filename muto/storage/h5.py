@@ -96,13 +96,13 @@ class H5(object):
         i=2
         for k in variables:
             dims = (0,)
-            if type(variables[k]) == tuple:
-                # then this is multidimensional
-                for i in variables[k]: #it had better be a list
-                    dims = dims + (i,)
-            else:
-                dims = (0,variables[k])
-            table_description[k]=tables.Float32Col(shape=dims,pos=i,
+#            if type(variables[k]) == tuple:
+#                # then this is multidimensional
+#                for i in variables[k]: #it had better be a list
+#                    dims = dims + (i,)
+#            else:
+#                dims = (0,variables[k])
+            table_description[k]=tables.Float32Col(shape=variables[k],pos=i,
                                                    dflt=-9999.)
             i+=1
             print table_description
