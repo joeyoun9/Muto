@@ -105,6 +105,7 @@ class H5(object):
             table_description[k]=tables.Float32Col(shape=dims,pos=i,
                                                    dflt=-9999.)
             i+=1
+            print table_description
         data_table = self.doc.createTable(group,'data',table_description,
                                     filters=filters.copy(),expectedrows=size_guess)
         'Set file attributes'        
@@ -210,7 +211,7 @@ class H5(object):
         self.doc.close()
         return out
 
-    def index(self,index,group='/'):
+    def index(self,index,group='/'): # DEPRECATED
         """
         CURRENTLY DEPRECATED - UNKNOWN UTILITY
         Read out the entire value of the specified data indexing value. 
