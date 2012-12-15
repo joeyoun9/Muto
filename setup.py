@@ -8,6 +8,6 @@ setup(name='muto',
       author='Joe Young',
       author_email='joe@jsyoung.us',
       url='http://www.jsyoung.us/code/',
-      packages=['muto'],
+      packages=['muto','muto.storage','muto.objects'],
      )
 
