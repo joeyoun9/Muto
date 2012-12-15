@@ -349,9 +349,10 @@ class H5(object):
 
     def close(self):
         if self.doc.isopen:
+            fcntl.lockf(self.doc,fcntl.LOCK_UN)
+
             self.doc.close()
             'unlock'
-            fcntl.lockf(self.doc,fcntl.LOCK_UN)
 
 
 
