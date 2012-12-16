@@ -195,7 +195,7 @@ class H5(object):
                 variables = [variables]
             out['time'] = table.readCoordinates(result,field='time')
             for v in variables:
-                out[v] = table.readCoordinates(results,field=v)
+                out[v] = table.readCoordinates(result,field=v)
         else:
             self.doc.close()
             'FIXME - raising an exception may not really be nice/necessary'
