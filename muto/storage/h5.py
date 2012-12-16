@@ -193,9 +193,9 @@ class H5(object):
         if len(indices) > 0:
             if not type(variables) == list:
                 variables = [variables]
-            out['time'] = table.readCoordinates(indices).field('time')
+            out['time'] = table.readCoordinates(field='time',indices)
             for v in variables:
-                out[v] = table.readCoordinates(indices).field(v)
+                out[v] = table.readCoordinates(field=v,indices)
         else:
             self.doc.close()
             'FIXME - raising an exception may not really be nice/necessary'
