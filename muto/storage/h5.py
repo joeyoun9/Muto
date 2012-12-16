@@ -203,7 +203,7 @@ class H5(object):
                             +' times specified')
 
         
-        if indices.any():
+        if not type(indices) == bool:
             for i in indices:
                 out[i] = self.doc.getNode(group,name=i)[0] 
 
