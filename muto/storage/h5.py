@@ -188,14 +188,14 @@ class H5(object):
                             +' or a duration in order to slice. Use dump() so see'\
                             +' an entire dataset') 
         out = {}
-        table = self.doc.getNode(group).data
-        result = table.getWhereList('(time >= '+str(begin)+')&(time <= '+str(end)+')')
+        
+        result = self.doc.getNode(group).data.getWhereList('(time >= '+str(begin)+')&(time <= '+str(end)+')')
         if len(result) > 0:
             if not type(variables) == list:
                 variables = [variables]
-            out['time'] = table.readCoordinates(result,field='time')
+            out['time'] = self.doc.getNode(group).data.readCoordinates(result,field='time')
             for v in variables:
-                out[v] = table.readCoordinates(result,field=v)
+                out[v] = self.doc.getNode(group).data.readCoordinates(result,field=v)
         else:
             self.doc.close()
             'FIXME - raising an exception may not really be nice/necessary'
