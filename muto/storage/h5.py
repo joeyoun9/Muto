@@ -187,7 +187,7 @@ class H5(object):
             raise Exception('You must specify a time tuple (timetup), begin/end'\
                             +' or a duration in order to slice. Use dump() so see'\
                             +' an entire dataset') 
-        print begin,end
+        out = {}
         table = self.doc.getNode(group).data
         indices = table.getWhereList('(time >= '+str(begin)+')&(time <= '+str(end)+')')
         if len(indices) > 0:
