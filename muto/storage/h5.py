@@ -119,7 +119,7 @@ class H5(object):
         return True
 
     def slice(self,variables,begin=False,end=False,duration=False,
-              timetup=False,indices=False,group='/'):
+              timetup=False,indices=False,group='/',persist=False):
         """
         Read a specific temporal subset of various variables, as well as fetch 
         indices
@@ -207,7 +207,8 @@ class H5(object):
             for i in indices:
                 out[i] = self.doc.getNode(group,name=i)[0] 
 
-        self.doc.close()
+        if not persist:
+            self.doc.close()
         return out
 
     def index(self,index,group='/'): # DEPRECATED
