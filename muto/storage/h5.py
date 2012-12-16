@@ -189,13 +189,13 @@ class H5(object):
                             +' an entire dataset') 
         out = {}
         table = self.doc.getNode(group).data
-        indices = table.getWhereList('(time >= '+str(begin)+')&(time <= '+str(end)+')')
-        if len(indices) > 0:
+        result = table.getWhereList('(time >= '+str(begin)+')&(time <= '+str(end)+')')
+        if len(result) > 0:
             if not type(variables) == list:
                 variables = [variables]
-            out['time'] = table.readCoordinates(indices,field='time')
+            out['time'] = table.readCoordinates(result,field='time')
             for v in variables:
-                out[v] = table.readCoordinates(indices,field=v)
+                out[v] = table.readCoordinates(results,field=v)
         else:
             self.doc.close()
             'FIXME - raising an exception may not really be nice/necessary'
@@ -203,7 +203,7 @@ class H5(object):
                             +' times specified')
 
         
-        if indices:
+        if indices.any():
             for i in indices:
                 out[i] = self.doc.getNode(group,name=i)[0] 
 
