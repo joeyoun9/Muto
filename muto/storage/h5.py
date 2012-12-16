@@ -113,7 +113,8 @@ class H5(object):
         self.doc.setNodeAttr('/','version', '1.1')
         'set any group attributes. - a list of available attributes'
         self.doc.setNodeAttr(group,'indices',indices.keys())
-        
+        'now we need to add the time values as a CS index'
+        self.doc.getNode(group).data.col('time').createCSIndex(filters=filters.copy())
         if close:
             self.doc.close()
         return True
@@ -177,7 +178,7 @@ class H5(object):
         elif duration and not end and not begin:
             # then 
             end = np.max(self.doc.getNode(group).data.col('time')[-10000:])
-            begin = end - duration # duration is in seconds?
+            begin = end - duration
         elif duration and begin:
             end = begin + duration
         elif duration and end:
