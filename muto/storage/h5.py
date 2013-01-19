@@ -197,7 +197,7 @@ class h5(object):
         
         if type(variables) == str:
             'Only one variable is requested, so we can use a prebuilt hack'
-            varlen = table[-1][variables].shape(0)
+            varlen = table[-1][variables].shape[0]
             
             'a quick hack to make the most frequent requests faster'
             out = np.array([(r['time'],r[variables]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
