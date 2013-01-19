@@ -11,8 +11,13 @@ import tables
 import fcntl
 import muto
 import numpy as np
+import logging as l
+l.basicConfig(level=l.DEBUG,
+    format='%(asctime)s: %(levelname)s: %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
 
-class H5(object):
+
+
+class h5(object):
     '''
     Class for interacting with HDF5 files in the format created by this class
     '''
@@ -29,13 +34,13 @@ class H5(object):
             
         """
         self.filename = fname
-        self.doc = False
+        self.doc = NullDoc()
 
-    def create(self, close=True, indices=False, group='/', size_guess=2000000, **variables):
+    def create(self, close=True, indices=False, group='/', **variables):
         # create an hdf5 table for use with datasets, ideally of known size...
         # variables specifies what variables will be filled in this archive
         """
-        Create 
+        Create an HDF5 document formatted for the provided variables
         
         Parameters
         ----------
@@ -55,9 +60,9 @@ class H5(object):
         #FIXME  - only one category available.??
         if not self.doc:
             'if the doc has been opened before, then reopen it for appending.'
-            self.doc = h5openw(self.filename)
+            self.doc,self.lock = h5openw(self.filename)
         elif not self.doc.isopen:
-            self.doc = h5opena(self.filename)
+            self.doc,self.lock = h5opena(self.filename)
             
         'Create the group the data is going to sit in'
         if group  is not '/':
@@ -83,7 +88,7 @@ class H5(object):
                         dims = dims + (i,)
                 else:
                     dims = (indices[k],)
-
+                    
                 self.doc.createCArray(group,k,
                                       tables.Float32Atom(),dims,
                                       filters=filters.copy())
@@ -91,30 +96,29 @@ class H5(object):
         By reading the variable information, we can create the description
         for this data table. 
         '''
-        
         table_description = {'time': tables.FloatCol(pos=1)}
         'define the starting variable position'
         i=2
         for k in variables:
-            dims = (0,)
-#            if type(variables[k]) == tuple:
-#                # then this is multidimensional
-#                for i in variables[k]: #it had better be a list
-#                    dims = dims + (i,)
-#            else:
-#                dims = (0,variables[k])
+            'data shape is equivalent to all the additional dimensions'
             table_description[k]=tables.Float32Col(shape=variables[k],pos=i,
                                                    dflt=-9999.)
             i+=1
-        data_table = self.doc.createTable(group,'data',table_description,
-                                    filters=filters.copy(),expectedrows=size_guess)
+        'create the table, disregard that it returns a table object'
+        self.doc.createTable(group,'data',table_description,
+                                    filters=filters.copy())
+        l.info('table created')
+        'NOTE -- EXPECTED ROWS HAS BEEN REMOVED!!!'
+        
         'Set file attributes'        
         self.doc.setNodeAttr('/','creator', 'Muto v'+muto.version())
-        self.doc.setNodeAttr('/','version', '1.1')
+        self.doc.setNodeAttr('/','version', '1.3')
         'set any group attributes. - a list of available attributes'
         self.doc.setNodeAttr(group,'indices',indices.keys())
         'now we need to add the time values as a CS index'
-        self.doc.getNode(group).data.col('time').createCSIndex(filters=filters.copy())
+        self.doc.getNode(group).data.cols.time.createCSIndex(filters=filters.copy())
+        'and instruct the table to auto-index'
+        self.doc.getNode(group).data.autoIndex=True
         if close:
             self.doc.close()
         return True
@@ -170,14 +174,15 @@ class H5(object):
         
         """
         if not self.doc or not self.doc.isopen:
-            self.doc = h5openr(self.filename)
+            self.doc,self.lock = h5openr(self.filename)
         'Determine specified time limits'
+        table = self.doc.getNode(group).data
         if timetup:
             begin = timetup[0]
             end = timetup[1]
         elif duration and not end and not begin:
-            # then 
-            end = np.max(self.doc.getNode(group).data.col('time')[-10000:])
+            'assuming that the max time is in the last 100'
+            end = np.max([r['time'] for r in table[-100:]])
             begin = end - duration
         elif duration and begin:
             end = begin + duration
@@ -190,23 +195,44 @@ class H5(object):
                             +' an entire dataset') 
         out = {}
         
-        result = self.doc.getNode(group).data.getWhereList('(time >= '+str(begin)+')&(time <= '+str(end)+')')
-        if len(result) > 0:
+        if type(variables) == str:
+            'Only one variable is requested, so we can use a prebuilt hack'
+            varlen = table[-1][variables].shape(0)
+            
+            'a quick hack to make the most frequent requests faster'
+            out = np.array([(r['time'],r[variables]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
+                           dtype=[('time',float),(variables,'f4',(varlen,))])
+            'IN THE FUTURE, this can be modified to account for all the variables '
+
+        
+        else:
             if not type(variables) == list:
                 variables = [variables]
-            out['time'] = self.doc.getNode(group).data.readCoordinates(result,field='time')
-            for v in variables:
-                out[v] = self.doc.getNode(group).data.readCoordinates(result,field=v)
-        else:
-            self.doc.close()
-            'FIXME - raising an exception may not really be nice/necessary'
-            raise Exception('This data set does not have any data within the'\
-                            +' times specified')
+            result = self.doc.getNode(group).data.getWhereList('(time >= '+str(begin)+')&(time <= '+str(end)+')')
+            if len(result['time']) > 0:
+                rstart, rstop = result[0], result[-1]+1
+                if rstop-rstart == len(result):
+                    'then we can just return all the values (skipping more refined check)'
+                    out['time'] = self.doc.getNode(group).data.read(rstart,rstop,field='time')
+                    for v in variables:
+                        out[v] = self.doc.getNode(group).data.read(rstart,rstop,field=v)
+                else:
+                    out['time'] = self.doc.getNode(group).data.readCoordinates(result,field='time')
+                    for v in variables:
+                        out[v] = self.doc.getNode(group).data.readCoordinates(result,field=v)
+            else:
+                'result length is 0'
+                self.doc.close()
+                'FIXME - raising an exception may not really be nice/necessary'
+                raise Exception('This data set does not have any data within the'\
+                                +' times specified')
 
         
         if not type(indices) == bool:
+            if type(indices) == str:
+                indices = [indices] 
             for i in indices:
-                out[i] = self.doc.getNode(group,name=i)[0] 
+                out[i] = self.doc.getNode(group,name=i)[:] 
 
         if not persist:
             self.doc.close()
@@ -214,11 +240,7 @@ class H5(object):
 
     def index(self,index,group='/'): # DEPRECATED
         """
-        CURRENTLY DEPRECATED - UNKNOWN UTILITY
-        Read out the entire value of the specified data indexing value. 
-        No searching is performed
-        
-        Deprecated? - will break
+        Grab the value of a specific index from the document/group
         
         Parameters
         ----------
@@ -228,11 +250,19 @@ class H5(object):
             string representation of the group where the indices are read from.
         """
         if not self.doc or not self.doc.isopen:
-            self.doc=h5openr(self.filename)
+            self.doc, self.lock = h5openr(self.filename)
         print 'WARNING - THIS IS A DEPRECATED FUNCTION'
         return self.doc.getNode(group,name=index)[0]
         # take the first value ([0]) because indices are time invariant in that 
         #dimension
+    def stat(self):
+        '''
+        Quickly print the file object to stdout
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc,self.lock = h5openr(self.filename)
+        print self.doc
+        self.close()
 
     def save_indices(self,group='/', **indices):
         """ 
@@ -249,7 +279,7 @@ class H5(object):
         """
         # simply stick the values of indices into their places
         if not self.doc or not self.doc.isopen:
-            self.doc = h5opena(self.filename)
+            self.doc,self.lock = h5opena(self.filename)
 
         for i in indices:
             self.doc.getNode(group,name=i)[:] = indices[i] # that is all!
@@ -298,7 +328,7 @@ class H5(object):
         """
 
         if not self.doc or not self.doc.isopen:
-            self.doc = h5opena(self.filename)
+            self.doc,self.lock = h5opena(self.filename)
         
         if not filter(self.doc,time,data):
             'Then the append does not pass their test, and should end'
@@ -338,7 +368,7 @@ class H5(object):
             The group the dataset is stored in.
         """
         if not self.doc or not self.doc.isopen:
-            self.doc = h5openr(self.filename)
+            self.doc,self.lock = h5openr(self.filename)
         indices = self.doc.getNodeAttr(group,'indices')
         if variable in indices:
             out = self.doc.getNode(group,name=variable)[:]
@@ -349,35 +379,41 @@ class H5(object):
         return out
 
     def close(self):
+        
         if self.doc.isopen:
-            fcntl.lockf(self.doc,fcntl.LOCK_UN)
-
             self.doc.close()
             'unlock'
+            fcntl.lockf(self.lock,fcntl.LOCK_UN)
+            self.lock.close()
 
-
-
-
+'create the null document object class so the isopen property can be assigned'
+class NullDoc(object):
+    def __init__(self):
+        self.isopen=False
 
 
 "These functions can have the lockout functionality applied to them later"
 def h5openr(f):
+    lkf = open(f+'.lock','w')
+    #fcntl.lockf(lkf,fcntl.LOCK_EX)
     f = tables.openFile(f,mode='r')
     'and lock the file'
-    fcntl.lockf(f,fcntl.LOCK_SH)
-    return f
+    #FIXME - this locking does not seem to be effective
+    return f,lkf
 
 def h5opena(f):
+    lkf = open(f+'.lock','w')
+    #fcntl.lockf(lkf,fcntl.LOCK_EX)
     # open the file f for appending
     f = tables.openFile(f,mode='a')
-    fcntl.lockf(f,fcntl.LOCK_EX)
-    return f
+    return f,lkf
 
 def h5openw(f):
+    lkf = open(f+'.lock','w')
+    #fcntl.lockf(lkf,fcntl.LOCK_EX)
     #this will destroy whatever file it is opening, note
     f = tables.openFile(f,mode='w', title='ms')
-    fcntl.lockf(f,fcntl.LOCK_EX)
-    return f
+    return f,lkf
 
 '''
 Here I include an example append filter, to filter if a time already exists in the data
