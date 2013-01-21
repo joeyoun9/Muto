@@ -36,7 +36,7 @@ class h5(object):
         self.filename = fname
         self.doc = NullDoc()
 
-    def create(self, close=True, indices=False, group='/', **variables):
+    def create(self, close=True, clear=False, indices=False, group='/', **variables):
         # create an hdf5 table for use with datasets, ideally of known size...
         # variables specifies what variables will be filled in this archive
         """
@@ -58,10 +58,10 @@ class h5(object):
         """
         
         #FIXME  - only one category available.??
-        if not self.doc:
+        if clear:
             'if the doc has been opened before, then reopen it for appending.'
             self.doc, self.lock = h5openw(self.filename)
-        elif not self.doc.isopen:
+        else:
             self.doc, self.lock = h5opena(self.filename)
             
         'Create the group the data is going to sit in'
@@ -71,8 +71,15 @@ class h5(object):
             gp = group.split('/')
             'then create the group'
             drop = '/'.join(gp[:-1]) + '/'
-            self.doc.createGroup(drop, name=gp[-1])
-            
+            try:
+                self.doc.createGroup(drop, name=gp[-1])
+            except:
+                'in this case, the group already exists'
+                pass
+        'Lets see if there is a way to clear the group soon'
+        
+        
+        
         'Identify the compression filters we are going to want to use'
         filters = tables.Filters(complevel=6, complib='zlib')#blosc
         '''
@@ -429,3 +436,4 @@ def h5openw(f):
 '''
 Here I include an example append filter, to filter if a time already exists in the data
 '''
+
