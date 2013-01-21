@@ -124,7 +124,8 @@ class h5(object):
         return True
 
     def slice(self, variables, begin=False, end=False, duration=False,
-              timetup=False, indices=False, group='/', persist=False):
+              timetup=False, indices=False, group='/', persist=False,
+              limit=None):
         """
         Read a specific temporal subset of various variables, as well as fetch 
         indices
@@ -197,17 +198,26 @@ class h5(object):
         
         if type(variables) == str:
             'Only one variable is requested, so we can use a prebuilt hack'
-            varlen = table[-1][variables].shape[0]
+            try:
+                varlen = table[-1][variables].shape[0]
+            except:
+                'This probably means the variable had no shape'
+                varlen = 1
             
             'a quick hack to make the most frequent requests faster'
             out = np.array([(r['time'], r[variables]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
                            dtype=[('time', float), (variables, 'f4', (varlen,))])
             'IN THE FUTURE, this can be modified to account for all the variables '
-
-        
+        elif len(variables) == 2:
+            'Account for the SECOND most common request'
+            varlen1 = table[-1][variables[0]].shape[0]
+            varlen2 = table[-1][variables[1]].shape[0]
+            #NOTE this will break if time or any single-valued variable is requested...
+            
+            out = np.array([(r['time'], r[variables[0]], r[variables[1]]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
+                           dtype=[('time', float), (variables[0], 'f4', (varlen1,), (variables[1], 'f4', (varlen2,)))])
+            
         else:
-            if not type(variables) == list:
-                variables = [variables]
             result = self.doc.getNode(group).data.getWhereList('(time >= ' + str(begin) + ')&(time <= ' + str(end) + ')')
             if len(result['time']) > 0:
                 rstart, rstop = result[0], result[-1] + 1
