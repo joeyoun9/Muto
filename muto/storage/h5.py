@@ -222,7 +222,7 @@ class h5(object):
             for var in variables:
                 'determine variable length'
                 try:
-                    shp = table[-1][variables[0]].shape
+                    shp = table[-1][var].shape
                 except:
                     shp = None
                 dtype.append((var,'f4',shp))
