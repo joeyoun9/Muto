@@ -202,7 +202,6 @@ class h5(object):
                             + ' or a duration in order to slice. Use dump() so see'\
                             + ' an entire dataset') 
         out = {}
-        
         if type(variables) == str:
             'Only one variable is requested, so we can use a prebuilt hack'
             try:
@@ -215,14 +214,21 @@ class h5(object):
             out = np.array([(r['time'], r[variables]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
                            dtype=[('time', float), (variables, 'f4', (varlen,))])
             'IN THE FUTURE, this can be modified to account for all the variables '
-        elif len(variables) == 2:
-            'Account for the SECOND most common request'
-            varlen1 = table[-1][variables[0]].shape[0]
-            varlen2 = table[-1][variables[1]].shape[0]
-            #NOTE this will break if time or any single-valued variable is requested...
-            
+        
+        elif True:
+            'sneaky way to evade that else'
+            'We are going to create a dtype structured array string'
+            dtype=[('time',float)]
+            for var in variables:
+                    'determine variable length'
+                    try:
+                        shp = table[-1][variables[0]].shape
+                    except:
+                        shp = None
+                    dtype.append((var,'f4',shp))
+            'FIXME!!! This only takes variables of length 2!!! BE WARNED!!!!'
             out = np.array([(r['time'], r[variables[0]], r[variables[1]]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
-                           dtype=[('time', float), (variables[0], 'f4', (varlen1,), (variables[1], 'f4', (varlen2,)))])
+                           dtype=dtype)
             
         else:
             result = self.doc.getNode(group).data.getWhereList('(time >= ' + str(begin) + ')&(time <= ' + str(end) + ')')
