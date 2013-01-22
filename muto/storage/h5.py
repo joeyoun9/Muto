@@ -227,7 +227,7 @@ class h5(object):
                     shp = None
                 dtype.append((var,'f4',shp))
             variables = ['time']+variables
-            print variables
+            'the for notation and tuple call do not seem to add monstrous overhead so far...'
             out = np.array([tuple([r[x] for x in variables]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
                            dtype=dtype)
             
