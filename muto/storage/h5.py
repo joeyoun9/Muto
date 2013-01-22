@@ -227,7 +227,7 @@ class h5(object):
                     shp = None
                 dtype.append((var,'f4',shp))
             variables = ['time']+variables
-            out = np.array([(r[x] for x in variables) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
+            out = np.array([[r[x] for x in variables] for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
                            dtype=dtype)
             
         else:
