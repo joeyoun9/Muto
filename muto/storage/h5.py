@@ -220,12 +220,13 @@ class h5(object):
             'We are going to create a dtype structured array string'
             dtype=[('time',float)]
             for var in variables:
-                    'determine variable length'
-                    try:
-                        shp = table[-1][variables[0]].shape
-                    except:
-                        shp = None
-                    dtype.append((var,'f4',shp))
+                'determine variable length'
+                try:
+                    shp = table[-1][variables[0]].shape
+                except:
+                    shp = None
+                dtype.append((var,'f4',shp))
+            print dtype
             'FIXME!!! This only takes variables of length 2!!! BE WARNED!!!!'
             out = np.array([(r['time'], r[variables[0]], r[variables[1]]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
                            dtype=dtype)
