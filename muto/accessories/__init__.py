@@ -12,3 +12,12 @@ def s2t(str, fmt):
     fmt = format string
     '''
     return calendar.timegm(time.strptime(str, fmt))
+
+def file_len(fname):
+    '''
+    As usual, thanks SilentGhost on stack overflow
+    '''
+    with open(fname) as f:
+        for i, l in enumerate(f):
+            pass
+    return i + 1

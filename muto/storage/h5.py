@@ -366,7 +366,34 @@ class h5(object):
         if not persist:
             self.doc.close()
         return True
-
+    
+    def flush(self,group='/'):
+        '''
+        Flush the table 'data' from the group identified
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.lock = h5opena(self.filename)
+        self.doc.getNode(group).data.flush()
+        self.close()
+        
+    def index(self,group='/'):
+        '''
+        Flush the table 'data' from the group identified
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.lock = h5opena(self.filename)
+        self.doc.getNode(group).data.reIndex()
+        self.close()
+        
+    def dirty_index(self,group='/'):
+        '''
+        Flush the table 'data' from the group identified
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.lock = h5opena(self.filename)
+        self.doc.getNode(group).data.reIndexDirty()
+        self.close()
+        
 
     def dump(self, variable, group='/'):
         """
