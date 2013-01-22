@@ -254,6 +254,22 @@ class h5(object):
         if not persist:
             self.doc.close()
         return out
+    
+    def direct_r(self,group='/'):
+        '''
+            return direct access to the table
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.lock = h5openr(self.filename)
+        return self.doc.getNode(group).data
+    
+    def direct_a(self,group='/'):
+        '''
+        directly access the data table 
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.lock = h5opena(self.filename)
+        return self.doc.getNode(group).data
 
     def get_index(self, index, group='/'): # DEPRECATED
         """
