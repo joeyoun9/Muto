@@ -226,9 +226,8 @@ class h5(object):
                 except:
                     shp = None
                 dtype.append((var,'f4',shp))
-            print dtype
-            'FIXME!!! This only takes variables of length 2!!! BE WARNED!!!!'
-            out = np.array([(r['time'], r[variables[0]], r[variables[1]]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
+            variables = ['time']+variables
+            out = np.array([(r[x] for x in variables) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
                            dtype=dtype)
             
         else:
