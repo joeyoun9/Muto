@@ -255,7 +255,7 @@ class h5(object):
             self.doc.close()
         return out
 
-    def index(self, index, group='/'): # DEPRECATED
+    def get_index(self, index, group='/'): # DEPRECATED
         """
         Grab the value of a specific index from the document/group
         
