@@ -190,7 +190,7 @@ class h5(object):
             end = timetup[1]
         elif duration and not end and not begin:
             'assuming that the max time is in the last 100'
-            end = np.max([r['time'] for r in table[-100:]])
+            end = self.end(group,True)
             begin = end - duration
         elif duration and begin:
             end = begin + duration
@@ -218,15 +218,15 @@ class h5(object):
         elif True:
             'sneaky way to evade that else'
             'We are going to create a dtype structured array string'
-            dtype=[('time',float)]
+            dtype = [('time', float)]
             for var in variables:
                 'determine variable length'
                 try:
                     shp = table[-1][var].shape
                 except:
                     shp = None
-                dtype.append((var,'f4',shp))
-            variables = ['time']+variables
+                dtype.append((var, 'f4', shp))
+            variables = ['time'] + variables
             'the for notation and tuple call do not seem to add monstrous overhead so far...'
             out = np.array([tuple([r[x] for x in variables]) for r in table.where('(time >= ' + str(begin) + ') & (time <= ' + str(end) + ')')],
                            dtype=dtype)
@@ -262,17 +262,31 @@ class h5(object):
             self.doc.close()
         return out
     
-    def direct_r(self,group='/'):
+    def end(self, group='/', persist=False):
         '''
-            return direct access to the table
+            Return the maximum time in the file as would be used if 
+            duration were engaged
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.lock = h5openr(self.filename)
+        'Determine specified time limits'
+        table = self.doc.getNode(group).data
+        max = np.max([r['time'] for r in table[-100:]])
+        if not persist:
+            self.doc.close()
+        return max
+    
+    def direct_r(self, group='/'):
+        '''
+            return direct access to the table with read-only access
         '''
         if not self.doc or not self.doc.isopen:
             self.doc, self.lock = h5openr(self.filename)
         return self.doc.getNode(group).data
     
-    def direct_a(self,group='/'):
+    def direct_a(self, group='/'):
         '''
-        directly access the data table 
+        directly access the data table with append access
         '''
         if not self.doc or not self.doc.isopen:
             self.doc, self.lock = h5opena(self.filename)
@@ -295,6 +309,7 @@ class h5(object):
         return self.doc.getNode(group, name=index)[0]
         # take the first value ([0]) because indices are time invariant in that 
         #dimension
+        
     def stat(self):
         '''
         Quickly print the file object to stdout
@@ -390,7 +405,7 @@ class h5(object):
             self.doc.close()
         return True
     
-    def flush(self,group='/'):
+    def flush(self, group='/'):
         '''
         Flush the table 'data' from the group identified
         '''
@@ -399,7 +414,7 @@ class h5(object):
         self.doc.getNode(group).data.flush()
         self.close()
         
-    def index(self,group='/'):
+    def index(self, group='/'):
         '''
         Flush the table 'data' from the group identified
         '''
@@ -408,7 +423,7 @@ class h5(object):
         self.doc.getNode(group).data.reIndex()
         self.close()
         
-    def dirty_index(self,group='/'):
+    def dirty_index(self, group='/'):
         '''
         Flush the table 'data' from the group identified
         '''
