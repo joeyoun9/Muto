@@ -465,9 +465,6 @@ class h5(object):
         
         if self.doc.isopen:
             self.doc.close()
-            'unlock'
-            fcntl.lockf(self.lock, fcntl.LOCK_UN)
-            self.lock.close()
 
 'create the null document object class so the isopen property can be assigned'
 class NullDoc(object):
@@ -477,23 +474,20 @@ class NullDoc(object):
 
 "These functions can have the lockout functionality applied to them later"
 def h5openr(f):
-    lkf = open(f + '.lock', 'w')
-    #fcntl.lockf(lkf,fcntl.LOCK_EX)
+    lkf = False
     f = tables.openFile(f, mode='r')
     'and lock the file'
     #FIXME - this locking does not seem to be effective
     return f, lkf
 
 def h5opena(f):
-    lkf = open(f + '.lock', 'w')
-    #fcntl.lockf(lkf,fcntl.LOCK_EX)
+    lkf = False
     # open the file f for appending
     f = tables.openFile(f, mode='a')
     return f, lkf
 
 def h5openw(f):
-    lkf = open(f + '.lock', 'w')
-    #fcntl.lockf(lkf,fcntl.LOCK_EX)
+    lkf = False
     #this will destroy whatever file it is opening, note
     f = tables.openFile(f, mode='w', title='ms')
     return f, lkf

@@ -90,7 +90,7 @@ def decode_hex_string(string, fail_value=1):
     Returns
     -------
     numpy array of directly translated values, not scaled. fail high values are 
-    set to 1, as this values is often lower than any other. You can adjust this
+    set to 1, as this value is often lower than any other. You can adjust this
     value if you wish it to be something else. Negative values will incur NaNs.
     '''
     data_len = len(string)
@@ -99,7 +99,7 @@ def decode_hex_string(string, fail_value=1):
     for i in xrange(0,data_len,5):
         temp = string[i:i+5]
         if temp[0:2] == "ff" or temp == '00000':
-            # logic: ff corresponds to >=ff000, which is ~1e6, which is beyond super high
+            # logic: ff corresponds to >=ff000, which is ~1e6, which is preposterous
             data[key] = fail_value
         else:
             data[key] = int(temp,16) # scaled to 100000sr/km (x1e9 sr/m)FYI
