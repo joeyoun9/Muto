@@ -13,8 +13,8 @@ setup(name='muto',
                 'muto.objects',
                 'muto.accessories',
                 'muto.accessories.decoders',
-                'muto.accessories.deocders.profile',
-                'muto.accessories.deocders.point',
+                'muto.accessories.decoders.profile',
+                'muto.accessories.decoders.point',
                 ],
      )
 
