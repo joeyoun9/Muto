@@ -121,7 +121,8 @@ class h5(object):
         self.doc.setNodeAttr('/', 'creator', 'Muto v' + muto.version())
         self.doc.setNodeAttr('/', 'version', '1.3')
         'set any group attributes. - a list of available attributes'
-        self.doc.setNodeAttr(group, 'indices', indices.keys())
+        if indices:
+            self.doc.setNodeAttr(group, 'indices', indices.keys())
         'now we need to add the time values as a CS index'
         self.doc.getNode(group).data.cols.time.createCSIndex(filters=filters.copy())
         'and instruct the table to auto-index'
