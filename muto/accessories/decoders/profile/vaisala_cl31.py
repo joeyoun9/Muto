@@ -94,7 +94,7 @@ def decode_hex_string(string, fail_value=1):
     value if you wish it to be something else. Negative values will incur NaNs.
     '''
     data_len = len(string)
-    data = np.zeros(data_len/5,dtype=int)
+    data = np.zeros(1+data_len/5,dtype=int)
     key = 0
     for i in xrange(0,data_len,5):
         temp = string[i:i+5]
