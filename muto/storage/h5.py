@@ -103,7 +103,7 @@ class h5(object):
         By reading the variable information, we can create the description
         for this data table. 
         '''
-        table_description = {'time': tables.FloatCol(pos=1)}
+        table_description = {'time': tables.Int32Col(pos=1)}
         'define the starting variable position'
         i = 2
         for k in variables:
