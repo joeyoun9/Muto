@@ -75,7 +75,7 @@ def read(ob):
         }
     return out
 
-def decode_hex_string(string, fail_value=1, char_count=5):
+def decode_hex_string(string, fail_value=1, char_count=5, filter=True):
     '''
     This is a compacted code for simply reading the hexadecimal string provided
     which comes from a CL31, or 51 message. It cannot compensate for
@@ -92,6 +92,9 @@ def decode_hex_string(string, fail_value=1, char_count=5):
         
     char_count: int, optional
         the number of characters per value in the string. For a CL31 this is 5
+        
+    filter: bool, optional
+        specifies whether or not to filter the values, using expected limits
 
     Returns
     -------
@@ -100,14 +103,17 @@ def decode_hex_string(string, fail_value=1, char_count=5):
     value if you wish it to be something else. Negative values will incur NaNs.
     '''
     data_len = len(string)
-    data = np.zeros(data_len / 5, dtype=int)
+    data = np.zeros(data_len / char_count, dtype=int)
     key = 0
-    for i in xrange(0, data_len, 5):
-        temp = string[i:i + 5]
-        data[key] = int(temp, 16)  # scaled to 100000sr/km (x1e9 sr/m)FYI
-        key += 1  # keep the key up to date
-    # apply value filters
-    data[data > 1e6] = fail_value
-    data[data == 0] = fail_value
+    # though ugly, using a key seems like a more reliable way to record indices.
+    for i in xrange(0, data_len, char_count):
+        temp = string[i:i + char_count]
+        data[key] = int(temp, 16)
+        key += 1
+    # apply value filters if required
+    if filter:
+        data[data > 1e6] = fail_value
+        data[data == 0] = fail_value
+        data = log10(data) - 9.
     return data
 
