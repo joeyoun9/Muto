@@ -104,12 +104,10 @@ def decode_hex_string(string, fail_value=1, char_count=5):
     key = 0
     for i in xrange(0, data_len, 5):
         temp = string[i:i + 5]
-        if temp[0:2] == "ff" or temp == '00000':
-            # logic: ff corresponds to >=ff000, which is ~1e6, which is preposterous
-            data[key] = fail_value
-        else:
-            data[key] = int(temp, 16)  # scaled to 100000sr/km (x1e9 sr/m)FYI
-
+        data[key] = int(temp, 16)  # scaled to 100000sr/km (x1e9 sr/m)FYI
         key += 1  # keep the key up to date
+    # apply value filters
+    data[data > 1e6] = fail_value
+    data[data == 0] = fail_value
     return data
 
