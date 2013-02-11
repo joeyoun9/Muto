@@ -75,7 +75,7 @@ def read(ob):
         }
     return out
 
-def decode_hex_string(string, fail_value=1, char_count=5, filter=True):
+def decode_hex_string(string, fail_value=1, char_count=5, use_filter=True):
     '''
     This is a compacted code for simply reading the hexadecimal string provided
     which comes from a CL31, or 51 message. It cannot compensate for
@@ -111,9 +111,9 @@ def decode_hex_string(string, fail_value=1, char_count=5, filter=True):
         data[key] = int(temp, 16)
         key += 1
     # apply value filters if required
-    if filter:
+    if use_filter:
         data[data > 1.3e5] = fail_value
         data[data == 0] = fail_value
-        data = log10(data) - 9.
+        data = np.log10(data) - 9.
     return data
 
