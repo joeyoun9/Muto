@@ -112,7 +112,7 @@ def decode_hex_string(string, fail_value=1, char_count=5, filter=True):
         key += 1
     # apply value filters if required
     if filter:
-        data[data > 1e6] = fail_value
+        data[data > 1.3e5] = fail_value
         data[data == 0] = fail_value
         data = log10(data) - 9.
     return data
