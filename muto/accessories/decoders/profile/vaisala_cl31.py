@@ -93,7 +93,7 @@ def decode_hex_string(string, fail_value=1, char_count=5, use_filter=True):
     char_count: int, optional
         the number of characters per value in the string. For a CL31 this is 5
         
-    filter: bool, optional
+    use_filter: bool, optional
         specifies whether or not to filter the values, using expected limits
 
     Returns
