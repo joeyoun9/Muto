@@ -1,5 +1,5 @@
-all = ['objects','storage']
+all = ['objects', 'storage']
 
 
 def version():
-    return '0.0.1'
+    return '0.1.5'
