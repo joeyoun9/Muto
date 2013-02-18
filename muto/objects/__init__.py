@@ -52,6 +52,18 @@ class DataObject(object):
 		'''
 		self.raw = raw
 		self.name=name
+	def advance(self, dt):
+		'''
+		Perform the same request which resulted in the current dataset, for 
+		the same period, offset at the start and end by dt seconds
+		'''
+		pass
+    def __getitem__(self, key):
+    	'''
+    	Allows use of 1 dimensional subscripts on data objects. 
+    	'''
+        return getattr(self, key)
+       
 	def write(self):
 		'Ensure the branch written to is of the same type as this ob. '
 		
