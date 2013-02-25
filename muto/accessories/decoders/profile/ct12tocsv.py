@@ -29,19 +29,26 @@ PRINT_HEADER = True
 # Provide information regarding the timestamp and timezone. Note that
 #    TIMEZONE_STRING is appended onto the end of the time stamp.
 #    For more information, see in the code itself in the file_read() method.
-TIMESTAMP_FORMAT = "%m/%d/%Y %H:%M:%S%Z"
+TIMESTAMP_FORMAT = "%m/%d/%Y %H:%M:%S.%f%Z"
 # NOTE: the timestamp format is specified in: http://docs.python.org/2/library/time.html
+# this default is UVA/DeWekker formatted for a timestamp that looks like:
+# 02/09/2013 20:53:26.058 - not the decimal seconds caught with .%f
 TIMEZONE_STRING = "UTC"
+# the timezone string is reuqired to prevent what I describe as unexpected timezone
+# behavior. UTC is preferred.
+TIMESTAMP_AFTER = True
+# Change this to false if the timestamp occurs *BEFORE* the ob to which it refers
 
-# Note, you can no longer specify if power is to be saved vs DD. Only power
-#    values are computed or saved.
+
 
 
 # '2. import numpy for computation and array structures, and othe packages
-import numpy as np
-import sys, calendar, time
-# for outputs we are going to use the standard logging library.
 import logging as l
+import numpy as np
+import sys
+import calendar
+import time
+# for outputs we are going to use the standard logging library.
 l.basicConfig(level=l.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
 #### YOU SHOULD NOT NEED TO MAKE FURTHER MODIFICATIONS FOR BASIC OPERATION ####
@@ -143,7 +150,8 @@ def create_csv_headers(bshandle, sthandle):
     sthandle.write(sth + '\n')
 
 
-def read_file(source, READ_CHUNK, PRINT_HEADER, TIMESTAMP_FORMAT, TIMEZONE_STRING):
+def read_file(source, READ_CHUNK, PRINT_HEADER, TIMESTAMP_FORMAT,
+              TIMEZONE_STRING, TIMESTAMP_AFTER):
     '''
     Read a single CT12 log file, with timestamps formatted in the defined way
     and create two CSV documents from that using the reader if possible. 
@@ -169,6 +177,17 @@ def read_file(source, READ_CHUNK, PRINT_HEADER, TIMESTAMP_FORMAT, TIMEZONE_STRIN
     B = unichr(002)
     C = unichr(003)
     # begin a controlled infinite loop to read the file in chunks, the lazy way'
+    if TIMESTAMP_AFTER:
+        split_1 = B
+        split_2 = C
+        text_key = 0
+        time_key = -1
+    else:
+        split_1 = C
+        split_2 = B
+        text_key = -1
+        time_key = 0
+
     while True:
         # read a single chunk
         data = readhandle.read(READ_CHUNK)
@@ -176,21 +195,20 @@ def read_file(source, READ_CHUNK, PRINT_HEADER, TIMESTAMP_FORMAT, TIMEZONE_STRIN
         if not data:
             break
         # break out individual obs by splitting the file by the first ob.
-        data = data.split(B)
+        data = data.split(split_1)
         for ob in data:
-            'grab the time by splitting by the second control, taking the end value, and stripping whitespace'
-            tmstring = ob.split(C)[-1].strip()
-            'now translate the time, and wrap in a try statement, to catch bad times = bad obs'
+            # grab the time by splitting by the second control, taking the end value, and stripping whitespace'
+            tmstring = ob.split(split_2)[time_key].strip()
+            # now translate the time, and wrap in a try statement, to catch bad times = bad obs'
             try:
-                tm = s2t(tmstring[:-4] + TIMEZONE_STRING, TIMESTAMP_FORMAT)
-                # 'Note, this will fail in 2100, assumes 012 == 2012 (only uses 2 digit year)'
+                tm = s2t(tmstring + TIMEZONE_STRING, TIMESTAMP_FORMAT)
             except:
                 # 'the time was not in the right format
-                l.warning('I could not read this timestamp!')
+                l.warning('I could not read this timestamp!: ' + str(sys.exc_info()))
                 continue
             # 'now grab just the observation text'
             try:
-                out = read(ob.split(C)[0].strip())
+                out = read(ob.split(split_2)[text_key].strip())
             except:
                 # 'again, failed to read, = bad ob'
                 l.warning('ob read failed. (occassional failure ok, frequent '\
@@ -228,7 +246,8 @@ if __name__ == "__main__":
     source = sys.argv[1]
 
     l.info('reading: ' + source)
-    read_file(source, READ_CHUNK, PRINT_HEADER, TIMESTAMP_FORMAT, TIMEZONE_STRING)
+    read_file(source, READ_CHUNK, PRINT_HEADER, TIMESTAMP_FORMAT,
+              TIMEZONE_STRING, TIMESTAMP_AFTER)
     l.info('Reading Complete')
 
 
