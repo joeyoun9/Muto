@@ -60,14 +60,12 @@ def read(ob):
     for i in xrange(0, len(prof), 5):
 
         ven = prof[i:i + 5]
-        if ven[0:2] == "ff" or ven == '00000':
-            # logic: ff corresponds to >=ff000, which is ~1e6, which is beyond super high
-            values[ky] = 1
-        else:
-            values[ky] = int(ven, 16)  # scaled to 100000sr/km (x1e9 sr/m)FYI
+
+        values[ky] = twos_comp(int(ven, 16), 20)  # scaled to 100000sr/km (x1e9 sr/m)FYI
         ky += 1  # keep the key up to date
 
     # then the storage will be log10'd values
+    values[values <= 0] = 1.
     out = {
         'height':np.arange(0, 10000, htMult)[:OB_LENGTH],
         'bs':np.log10(values[:OB_LENGTH] / SCALING_FACTOR),
@@ -107,13 +105,21 @@ def decode_hex_string(string, fail_value=1, char_count=5, use_filter=True):
     key = 0
     # though ugly, using a key seems like a more reliable way to record indices.
     for i in xrange(0, data_len, char_count):
-        temp = string[i:i + char_count]
-        data[key] = int(temp, 16)
+        hex_string = string[i:i + char_count]
+        data[key] = twos_comp(int(hex_string, 16), 20)
         key += 1
     # apply value filters if required
     if use_filter:
-        data[data > 1e6] = fail_value
-        data[data == 0] = fail_value
+        data[data <= 0] = fail_value
         data = np.log10(data) - 9.
     return data
+
+# I thanks Travc at stack overflow for this method of converting values
+# See here: http://stackoverflow.com/questions/1604464/twos-complement-in-python
+
+def twos_comp(val, bits):
+    """compute the 2's compliment of int value val"""
+    if((val & (1 << (bits - 1))) != 0):
+        val = val - (1 << bits)
+    return val
 
