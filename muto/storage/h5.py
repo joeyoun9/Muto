@@ -8,6 +8,8 @@ Much of this is based off my thesis work, except completely using tables
 instead of v arrays.
 '''
 import tables
+import time
+import os
 import fcntl
 import muto
 import numpy as np
@@ -458,10 +460,39 @@ class h5(object):
         self.close()
         return out
 
-    def close(self):
+    # Open and close methods, extending on the one written below, allows
+    # simple open/close checks to be performed
+    def opena(self):
+        '''
+        use the opena method after checking if the file already exists
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.fhandle, self.openSuccess, self.locktime = h5opena(self.filename)
 
-        if self.doc.isopen:
-            self.doc.close()
+    def openr(self):
+        '''
+        open the file for reading, which should not require a lock?
+        '''
+        if not self.doc or not self.doc.isopen:
+            self.doc, self.fhandle, self.openSuccess, self.locktime = h5opena(self.filename)
+
+    def close(self):
+        '''
+        close a file and test for all errors
+        '''
+        try:
+            self.table.flush()
+        except:
+                pass
+        try:
+                self.doc.close()
+        except:
+                pass
+        try:
+                os.close(self.fhandle)
+        except:
+                pass
+
 
 class NullDoc(object):
     '''
@@ -473,24 +504,57 @@ class NullDoc(object):
 
 
 # These functions can have the lockout functionality applied to them later
-def h5openr(f):
-    lkf = False
-    f = tables.openFile(f, mode='r')
-    'and lock the file'
-    # FIXME - this locking does not seem to be effective
-    return f, lkf
+def h5opena(fname):
+    '''
+    lock the file, open it, and deal with errors appropriately.
+    '''
+    # if os.path.exists(fname):
+    f = None
+    ltime = 0
+    try:
+        fhandle = None
+        stime = time.time()
+        fhandle = os.open(fname, os.O_RDWR)
+        fcntl.lockf(fhandle, fcntl.LOCK_EX)
+        ltime = time.time() - stime
+        f = tables.openFile(fname, 'a')
+    except:
+        if fhandle is not None:
+            os.close(fhandle)
+            fhandle = None
+    if f and fhandle:
+        # successful open and lock
+        l.info('HDF opened: ' + fname)
+        return f, fhandle, 1, ltime
+    else:
+        # no such file, so create one
+        return None, None, 0, ltime
 
-def h5opena(f):
-    lkf = False
-    # open the file f for appending
-    f = tables.openFile(f, mode='a')
-    return f, lkf
-
-def h5openw(f):
-    lkf = False
-    # this will destroy whatever file it is opening, note
-    f = tables.openFile(f, mode='w', title='ms')
-    return f, lkf
+def h5openr(fname):
+    '''
+    lock the file, open it, and deal with errors appropriately.
+    '''
+    # if os.path.exists(fname):
+    f = None
+    ltime = 0
+    try:
+        fhandle = None
+        stime = time.time()
+        fhandle = os.open(fname, os.O_RDONLY)
+        fcntl.lockf(fhandle, fcntl.LOCK_SH)
+        ltime = time.time() - stime
+        f = tables.openFile(fname, 'r')
+    except:
+        if fhandle is not None:
+            os.close(fhandle)
+            fhandle = None
+    if f and fhandle:
+        # successful open and lock
+        l.info('HDF opened: ' + fname)
+        return f, fhandle, 1, ltime
+    else:
+        # no such file, so create one
+        return None, None, 0, ltime
 
 '''
 Here I include an example append filter, to filter if a time already exists in the data
