@@ -504,7 +504,8 @@ class NullDoc(object):
 
 
 # These functions can have the lockout functionality applied to them later
-def h5opena(fname):
+
+def h5open_lock(fname, mode='a'):
     '''
     lock the file, open it, and deal with errors appropriately.
     '''
@@ -517,8 +518,9 @@ def h5opena(fname):
         fhandle = os.open(fname, os.O_RDWR)
         fcntl.lockf(fhandle, fcntl.LOCK_EX)
         ltime = time.time() - stime
-        f = tables.openFile(fname, 'a')
+        f = tables.openFile(fname, mode)
     except:
+        # this didn't work, file probably doesn't exist.
         if fhandle is not None:
             os.close(fhandle)
             fhandle = None
@@ -526,22 +528,56 @@ def h5opena(fname):
         # successful open and lock
         l.info('HDF opened: ' + fname)
         return f, fhandle, 1, ltime
+    if fhandle is not None:
+        # then the file opened, but tables balked
+        return False, False, 0, ltime
     else:
         # no such file, so create one
-        return None, None, 0, ltime
+        fhandle = os.open(fname, os.O_CREAT)
+        os.close(fhandle)
+        # if this breaks, we will ahve a small problem
+        time.sleep(.1)
+        # run this again recursively, it does not appear to hang in tests.
+        return h5opena(fname)
+
+
+def h5close(table, doc, fhandle):
+    '''
+    close a file and test for all errors
+    
+    table being the table we worked with, doc being the PyTables file handle,
+    fhandle being the os.open() file handle
+    '''
+    try:
+        table.flush()
+    except:
+            pass
+    try:
+            doc.close()
+    except:
+            pass
+    try:
+            os.close(fhandle)
+    except:
+            pass
+
+
+
 
 def h5openr(fname):
     '''
     lock the file, open it, and deal with errors appropriately.
     '''
+    l.warning('do not use locking for read processes')
+    return False
     # if os.path.exists(fname):
     f = None
     ltime = 0
     try:
         fhandle = None
         stime = time.time()
-        fhandle = os.open(fname, os.O_RDONLY)
-        fcntl.lockf(fhandle, fcntl.LOCK_SH)
+        # fhandle = os.open(fname, os.O_RDONLY)
+        # fcntl.lockf(fhandle, fcntl.LOCK_SH)
         ltime = time.time() - stime
         f = tables.openFile(fname, 'r')
     except:
