@@ -526,7 +526,7 @@ def h5open_lock(fname, mode='a'):
             fhandle = None
     if f and fhandle:
         # successful open and lock
-        l.info('HDF opened: ' + fname)
+        # l.info('HDF opened: ' + fname)
         return f, fhandle, 1, ltime
     if fhandle is not None:
         # then the file opened, but tables balked
