@@ -538,7 +538,7 @@ def h5open_lock(fname, mode='a'):
         # if this breaks, we will ahve a small problem
         time.sleep(.1)
         # run this again recursively, it does not appear to hang in tests.
-        return h5opena(fname)
+        return h5open_lock(fname, mode)
 
 
 def h5close(table, doc, fhandle):
