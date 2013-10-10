@@ -3,9 +3,9 @@ Created on Jan 27, 2013
 
 @author: jyoung
 '''
-from numpy import exp, zeros, float32, array, arange
+from numpy import exp, zeros, float32, array, arange, uint8
 
-def read(ob):
+def read(ob, doFilter=True):
     """
         Process a CT12 data message. This will read both the message and 
         status information, and output a dict of the values similar to the 
@@ -22,7 +22,7 @@ def read(ob):
     for l in dls:
         if len(l.strip()) > 3:
             # then i guess there is content
-            dl.append(l) #NOT STRIP!!
+            dl.append(l)  # NOT STRIP!!
     del dls
 
     'cloud line'
@@ -38,24 +38,31 @@ def read(ob):
     def to(x):
         if '/' in x: return 0.
         return float(x)
-    status = array(map(to,data),dtype=float32)
-    
-    values = zeros((250), dtype=float32)
+    status = array(map(to, data), dtype=float32)
+    if doFilter:
+        values = zeros((250), dtype=float32)
+    else:
+        values = zeros((250), dtype=uint8)
     '250 is the only length this msg can be'
     'Join the split up data lines back together to read in more easily and reformat'
     string = '\n'.join(dl[2:]).replace(' ', '0').replace("\n", "").replace("\r", "").strip()
     index = 0
     for i in xrange(2, len(string[2:]) + 1, 2):
-        if i % 42 == 0: continue # height indices
-        val = (int(string[i:i + 2], 16) - 1) / 50. # compute the SS value...
+        if i % 42 == 0: continue  # height indices
+        if doFilter:
+            val = (int(string[i:i + 2], 16) - 1) / 50.  # compute the SS value...
+        else:
+            val = int(string[i:i + 2], 16)
         values[index] = val
         index += 1
+    if doFilter:
+        values = exp(values)
     out = {
            'height':arange(250) * 15,
-           'bs':exp(values),
+           'bs':values,
            'status':status,
-           } # 15 m vertical resolution is the only reportable form!
-    
+           }  # 15 m vertical resolution is the only reportable form!
+
     return out
 
 def decode_hex_string(string):
@@ -78,5 +85,4 @@ def decode_hex_string(string):
     '''
     pass
     'This method will not be implemented until a reason to do so exists.'
-    
-    
+
