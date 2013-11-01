@@ -199,6 +199,9 @@ def read_file(source, READ_CHUNK, PRINT_HEADER, TIMESTAMP_FORMAT,
         for ob in data:
             # grab the time by splitting by the second control, taking the end value, and stripping whitespace'
             tmstring = ob.split(split_2)[time_key].strip()
+            # CREAGER CORRECTION: in case there is a new line in this string, take the first line
+            if "\n" in tmstring:
+                tmstring = tmstring.split('/n')[0]
             # now translate the time, and wrap in a try statement, to catch bad times = bad obs'
             try:
                 tm = s2t(tmstring + TIMEZONE_STRING, TIMESTAMP_FORMAT)
